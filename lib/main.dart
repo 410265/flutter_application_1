@@ -1,79 +1,64 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
-  runApp(const MiAplicacion());
+  runApp(const MyApp());
 }
 
-class MiAplicacion extends StatelessWidget {
-  const MiAplicacion({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  Future<Map<String, dynamic>> obtenerPokemon() async {
+    final url = Uri.parse('https://pokeapi.co/api/v2/pokemon/pikachu');
+    final respuesta = await http.get(url);
+
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    } else {
+      throw Exception('Error al cargar los datos');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'LDSW Home Screen',
-      home: const HomeScreen(),
-    );
-  }
-}
+      title: 'Peticiones HTTP',
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Peticiones HTTP - Pokémon'),
+        ),
+        body: Center(
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: obtenerPokemon(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                final pokemon = snapshot.data!;
+                final nombre = pokemon['name'];
+                final imagen = pokemon['sprites']['front_default'];
+                final altura = pokemon['height'];
+                final peso = pokemon['weight'];
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Pokémon: $nombre',
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    Image.network(imagen),
+                    Text('Altura: $altura'),
+                    Text('Peso: $peso'),
+                  ],
+                );
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.network(
-            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3',
-            fit: BoxFit.cover,
+              return const CircularProgressIndicator();
+            },
           ),
-
-          Container(
-            color: Colors.black.withOpacity(0.45),
-          ),
-
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(
-                  Icons.phone_android,
-                  size: 90,
-                  color: Colors.white,
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Hello World',
-                  style: TextStyle(
-                    fontSize: 34,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Bienvenido a mi aplicación móvil',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'LDSW - Home Screen',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
